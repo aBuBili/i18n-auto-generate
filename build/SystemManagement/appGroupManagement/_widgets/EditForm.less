@@ -1,0 +1,62 @@
+.wrapper {
+  .title {
+    margin-top: 57px;
+  }
+
+  .form {
+    margin-top: 8px;
+  }
+
+  :global {
+    .tea-form-operate {
+      border: none;
+    }
+  }
+
+  .bgTransparent {
+    :global {
+      .is-disabled .tea-dropdown-btn.tea-dropdown__header,
+      .is-disabled .tea-dropdown-btn.tea-dropdown__header:hover,
+      .is-expanded.tea-dropdown-btn.is-disabled .tea-dropdown__header {
+        background-color: transparent;
+      }
+    }
+  }
+
+  .gray {
+    :global {
+      input:disabled {
+        -webkit-text-fill-color: #bbb;
+      }
+      input:disabled::placeholder {
+        -webkit-text-fill-color: #bbb;
+      }
+    }
+  }
+
+  .none {
+    :global {
+      input:disabled {
+      }
+      input:disabled::placeholder {
+        -webkit-text-fill-color: #bbb;
+      }
+    }
+  }
+
+  .black {
+    :global {
+      input:disabled {
+        -webkit-text-fill-color: #000;
+      }
+      input:disabled::placeholder {
+        -webkit-text-fill-color: #bbb;
+      }
+    }
+  }
+
+  .formAction {
+    margin: 190px 0 0 0;
+    padding: 0;
+  }
+}
