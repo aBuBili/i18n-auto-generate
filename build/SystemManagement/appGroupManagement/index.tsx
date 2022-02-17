@@ -9,13 +9,13 @@ const AppGroupManagementPage = () => {
   const intl = useIntl();
 
   let obj = {
-    text: "请选择数据集群(Group)",
-    value: "请选择数据",
+    text: intl.formatMessage({ id: 'please_select_data_cluster_group' }),
+    value: intl.formatMessage({ id: 'please_select_data' }),
   };
 
   return (
     <Content>
-      <Content.Header title="应用组管理(MySQL)" label="应用组" />
+      <Content.Header title={intl.formatMessage({ id: 'mysql_application_group_management' })} label={intl.formatMessage({ id: 'application_of_group' })} />
 
       <Content.Body full>
         <div>
@@ -23,12 +23,12 @@ const AppGroupManagementPage = () => {
           <p>你确定你Confirm了吗？Sure?</p>
           <p>Sure?</p>
           <p>Lilei : "Hello,i'm Lilei!"</p>
-          <p>罗纳 : "Hello,i'm 罗纳!"</p>
-          <p>{true ? "你好！" : "hello"}</p>
+          <p>罗纳 : intl.formatMessage({ id: 'hello_i_m_barcelona' })</p>
+          <p>{true ? intl.formatMessage({ id: 'hello' }) : "hello"}</p>
           <p>{obj.text}</p>
-          <input type="text" placeholder="请输入您的姓名！" />
-          <input type="text" placeholder="please try again, 辛巴!" />
-          <input type="text" placeholder="请输入您的address！" />
+          <input type="text" placeholder={intl.formatMessage({ id: 'please_enter_your_name' })} />
+          <input type="text" placeholder={intl.formatMessage({ id: 'please_try_again_simba' })} />
+          <input type="text" placeholder={intl.formatMessage({ id: 'please_enter_your_address' })} />
         </div>
         <Card className="layoutContent">
           <Card.Body>

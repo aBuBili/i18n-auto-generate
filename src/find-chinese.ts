@@ -10,68 +10,80 @@ interface chineseObj {
   type: string;
 }
 
-//初始化词典文件
-getDictionaryInitFun();
+// 所有参数
+var cnObj: { [key: string]: string } = {}; // 所有键值对 - 英文:中文
+var enObj: { [key: string]: string } = {}; // 所有键值对 - 英文:英文
+var dicObj: { [key: string]: string } = {}; // 所有键值对 - 英文:英文
 
-// 获取当前目录下的所有文件
-const folderChoices = findCurFolderDirectory();
+var dictionary: { [key: string]: string } = {}; // 初始化词典文件
+var temp: string = ""; // 单文件字符串内容 因为跨多个处理方法
+var fileArr: string[] = []; // 所有层级的文件数组
 
-// 选择执行
-if (folderChoices.length == 0) {
-  console.log("🚀 ~ 没有可以处理的文件！");
-} else {
-  // 获取同等级下的所有目录
-  inquirer
-    .prompt([
-      {
-        type: "list",
-        message: "请选择需要处理哪一个文件：",
-        name: "folder",
-        prefix: "- ",
-        choices: folderChoices,
-      },
-      {
-        type: "list",
-        message: "生成词典还是生成键值对：",
-        name: "runType",
-        prefix: "- ",
-        choices: ["生成词典", "生成键值对"],
-      },
-    ])
-    .then((answer) => {
-      const { folder, runType } = answer;
-      path = folder;
-      runType == "生成词典" ? getDictionary() : replaceChinese();
-    });
+init();
+
+function init() {
+  //初始化词典文件
+  getDictionaryInitFun();
+
+  // 选择执行操作
+  selsectRunTypeFun();
 }
 
-// 结果参数
-var cnObj: { [key: string]: string } = {}; // 所有键值对 - 英文:中文
-var temp: string = ""; // 单文件字符串内容
-var fileArr: string[] = []; // 所有层级的文件
-var path = ""; // 递归开始目录
-var dictionary: { [key: string]: string } = {}; // 词典文件
+// 选择执行操作
+function selsectRunTypeFun() {
+  // 获取当前目录下的所有文件
+  const folderChoices = findCurFolderDirectory();
+
+  // 选择执行
+  if (folderChoices.length == 0) {
+    console.log("🚀 ~ 没有可以处理的文件！");
+  } else {
+    // 获取同等级下的所有目录
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "请选择需要处理哪一个文件：",
+          name: "folder",
+          prefix: "- ",
+          choices: folderChoices,
+        },
+        {
+          type: "list",
+          message: "生成词典还是生成键值对：",
+          name: "runType",
+          prefix: "- ",
+          choices: ["生成词典", "生成键值对"],
+        },
+      ])
+      .then((answer) => {
+        const { folder, runType } = answer;
+        fun(folder);
+        runType == "生成词典" ? getDictionary() : replaceChinese();
+      });
+  }
+}
 
 // 生成词典文件
 async function getDictionary() {
-  fun(path); // 抓文件
+  console.log(
+    "🚀 ~ file: find-chinese.ts ~ line 60 ~ getDictionary ~ getDictionary",
+    dictionary
+  );
   for (let e of fileArr) {
     const { curPageChineseArr, transArr } = await dealPageFun(e);
 
     for (let { text, index } of curPageChineseArr) {
       let key = newKeyFun(text, transArr[index]);
-      cnObj[text] = key;
+      dicObj[text] = key;
     }
   }
 
-  writeDictionaryFun(cnObj);
+  writeJsonFun(dicObj, "dic");
 }
 
-// 替换页面中文
+// 用插槽替换页面中文
 async function replaceChinese(): Promise<void> {
-  const enObj: { [key: string]: string } = {};
-
-  fun(path); // 抓文件
   for (let e of fileArr) {
     const { curPageChineseArr, transArr } = await dealPageFun(e);
 
@@ -81,15 +93,15 @@ async function replaceChinese(): Promise<void> {
       enObj[key] = key;
       replaceSlotFun(index, key, type);
     }
-    // writeFileFun(path, temp)
+    writeFileFun(e, temp);
   }
 
-  writeCnFun(cnObj); // key-中文 的对象
-  writeEnFun(enObj); // key-英文 的对象
+  writeJsonFun(cnObj, "cn"); // key-中文 的对象
+  writeJsonFun(enObj, "en"); // key-英文 的对象
   generateOtrLanguageFun("ja");
 }
 
-// 识别文件 全同步
+// 抓多层级文件 全同步
 function fun(path: string) {
   const stats = fs.statSync(path);
 
@@ -119,10 +131,10 @@ function findCurFolderDirectory(): string[] {
   for (let e of files) {
     e == ".DS_Store" ||
     e == "find-chinese.js" ||
-    e == "ja-json.js" ||
-    e == "cn-json.js" ||
-    e == "en-json.js" ||
-    e == "dictionary.js"
+    e == "ja-json.json" ||
+    e == "cn-json.json" ||
+    e == "en-json.json" ||
+    e == "dictionary.json"
       ? ""
       : list.push(e);
   }
@@ -174,7 +186,7 @@ function findChinese() {
 
   // ="xxx" propsText
   const reg1 =
-    /(=")([a-zA-Z,.!?()""''，。！？（）“”‘’ ]*[\u4e00-\u9fa5]+[a-zA-Z,.!?()""''，。！？（）“”‘’ ]*)(")/g;
+    /(=")([a-zA-Z0-9,.!?()"'，。！？（）"' ]*[\u4e00-\u9fa5]+[a-zA-Z0-9,.!?()"'，。！？（）"' ]*)(")/g;
   temp = temp.replace(reg1, (str) => {
     chineseArr.push({
       text: str.slice(2, -1),
@@ -184,25 +196,25 @@ function findChinese() {
     return `@=${index++}=#`;
   });
 
-  // "xxx" || 'xxx' objText
-  const reg2 =
-    /(['"])([a-zA-Z,.!?()""''，。！？（）“”‘’ ]*[\u4e00-\u9fa5]+[a-zA-Z,.!?()""''，。！？（）“”‘’ ]*)\1/g;
-  temp = temp.replace(reg2, (str) => {
+  // >xxx</ tagText
+  const reg3 =
+    /(>)([a-zA-Z0-9,.!?()"'，。！？（）"' ]*[\u4e00-\u9fa5]+[a-zA-Z0-9,.!?()"'，。！？（）"' ]*)(<\/)/g;
+  temp = temp.replace(reg3, (str) => {
     chineseArr.push({
-      text: str.slice(1, -1),
-      type: "objText",
+      text: str.slice(1, -2),
+      type: "tagText",
       index,
     });
     return `@=${index++}=#`;
   });
 
-  // >xxx</ tagText
-  const reg3 =
-    /(>)([a-zA-Z,.!?()""''，。！？（）“”‘’ ]*[\u4e00-\u9fa5]+[a-zA-Z,.!?()""''，。！？（）“”‘’ ]*)(<\/)/g;
-  temp = temp.replace(reg3, (str) => {
+  // "xxx" || 'xxx' objText
+  const reg2 =
+    /(['"])([a-zA-Z0-9,.!?()"'，。！？（）"' ]*[\u4e00-\u9fa5]+[a-zA-Z0-9,.!?()"'，。！？（）"' ]*)\1/g;
+  temp = temp.replace(reg2, (str) => {
     chineseArr.push({
-      text: str.slice(1, -2),
-      type: "tagText",
+      text: str.slice(1, -1),
+      type: "objText",
       index,
     });
     return `@=${index++}=#`;
@@ -280,9 +292,7 @@ function newKeyFun(chi: string, en: string): string {
     return dictionary[chi];
   }
   // 标点 替换成 "_"
-  let key = en
-    .toLocaleLowerCase()
-    .replace(/[,.!?()""''，。！？（）“”‘’ ]+/g, "_");
+  let key = en.toLocaleLowerCase().replace(/[,.!?()"'，。！？（）"' ]+/g, "_");
   // key去重
   while (cnObj.hasOwnProperty(key)) {
     if (cnObj[key] == chi) {
@@ -329,48 +339,27 @@ async function generateOtrLanguageFun(lan: string) {
     jaObj[val] = transArr[index];
   });
 
-  lan == "ja" ? writeJaFun(jaObj) : "";
+  lan == "ja" ? writeJsonFun(jaObj, "ja") : "";
   console.log("🚀 生成其他语言完成 -- " + lan);
 }
 
-// 写入词典json
-function writeDictionaryFun(obj: Object) {
-  const str = JSON.stringify(obj);
-  let json = "module.exports = index =" + str.replace(/","/g, '",\n"');
-  writeFileFun("dictionary.js", json, "写入词典成功");
-}
-
-// 写入中文json
-function writeCnFun(obj: Object) {
-  const str = JSON.stringify(obj);
-  let json =
-    "const index = " +
-    str.replace(/,"/g, ",\n").replace(/":/g, ": ").replace('{"', "{");
-  writeFileFun("cn-json.js", json, "写入中文成功！");
-}
-
-// 写入英文json
-function writeEnFun(obj: Object) {
-  const str = JSON.stringify(obj);
-  let json =
-    "const index = " +
-    str.replace(/,"/g, ",\n").replace(/":/g, ": ").replace('{"', "{");
-  writeFileFun("en-json.js", json, "写入英文成功！");
-}
-
-// 写入日本json
-function writeJaFun(obj: Object) {
-  const str = JSON.stringify(obj);
-  let json =
-    "const index = \n" +
-    str.replace(/","/g, '",\n').replace(/":"/g, ':"').replace('{"', "{");
-  writeFileFun("ja-json.js", json, "写入日文成功！");
-}
-
-// 读文件 同步
-function readFileFun(path: string) {
-  const data = fs.readFileSync(path);
-  return data.toString();
+// 写入json文件
+function writeJsonFun(obj: Object, type: string) {
+  const str = JSON.stringify(obj).replace(/,"/g, ',\n\t"');
+  switch (type) {
+    case "cn":
+      writeFileFun("cn-json.json", str, "写入中文成功！");
+      break;
+    case "en":
+      writeFileFun("en-json.json", str, "写入英文成功！");
+      break;
+    case "ja":
+      writeFileFun("ja-json.json", str, "写入日文成功！");
+      break;
+    case "dic":
+      writeFileFun("dictionary.json", str, "写入词典成功！");
+      break;
+  }
 }
 
 // 写文件 异步
@@ -384,18 +373,18 @@ function writeFileFun(path: string, content: string, successLog?: string) {
   });
 }
 
+// 读文件 同步
+function readFileFun(path: string) {
+  return fs.readFileSync(path, "utf-8");
+}
+
 // 获取词典文件
 function getDictionaryInitFun() {
-  const dicPath = "dictionary.js";
+  const dicPath = "dictionary.json";
   const exit = fs.existsSync(dicPath);
   if (exit) {
-    let obj = readFileFun(dicPath).replace("module.exports = index =", "");
-    console.log(obj);
-    dictionary = JSON.parse(obj);
-    console.log(
-      "🚀 ~ file: find-chinese.ts ~ line 397 ~ getDictionaryInitFun ~ dictionary",
-      dictionary
-    );
+    dictionary = JSON.parse(readFileFun(dicPath));
+    console.log("🚀 字典初始化成功！");
   }
 }
 
