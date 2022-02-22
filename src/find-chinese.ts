@@ -66,10 +66,8 @@ function selsectRunTypeFun() {
 
 // 生成词典文件
 async function getDictionary() {
-  console.log(
-    "🚀 ~ file: find-chinese.ts ~ line 60 ~ getDictionary ~ getDictionary",
-    dictionary
-  );
+  // console.log("🚀 ~ file: line 60 ~ getDictionary ~ getDictionary", dictionary);
+
   for (let e of fileArr) {
     const { curPageChineseArr, transArr } = await dealPageFun(e);
 
@@ -159,12 +157,12 @@ async function dealPageFun(path: string) {
 
   const chiArr = curPageChineseArr.map((e) => e?.text);
   console.log("中文--" + path + "--");
-  console.log(chiArr);
+  // console.log(chiArr);
 
   // 翻译
   transArr = await translateFun(chiArr.join("\n"), "en");
   console.log("翻译--" + path + "--");
-  console.log(transArr);
+  // console.log(transArr);
 
   return {
     curPageChineseArr,
@@ -185,42 +183,57 @@ function findChinese() {
   let index = 0;
 
   // ="xxx" propsText
-  const reg1 =
-    /(=")([a-zA-Z0-9,.!?()"'，。！？（）"' ]*[\u4e00-\u9fa5]+[a-zA-Z0-9,.!?()"'，。！？（）"' ]*)(")/g;
-  temp = temp.replace(reg1, (str) => {
-    chineseArr.push({
-      text: str.slice(2, -1),
-      type: "propsText",
-      index,
-    });
-    return `@=${index++}=#`;
-  });
+  const reg1 = /="([\u4E00-\u9FA5a-zA-Z0-9(),.:!?_（），。：！？‘“ -]+)"/g;
+  temp.match(reg1)?.forEach((e) => pushAndReplace(e, [2, -1], "propsText"));
 
   // >xxx</ tagText
-  const reg3 =
-    /(>)([a-zA-Z0-9,.!?()"'，。！？（）"' ]*[\u4e00-\u9fa5]+[a-zA-Z0-9,.!?()"'，。！？（）"' ]*)(<\/)/g;
-  temp = temp.replace(reg3, (str) => {
-    chineseArr.push({
-      text: str.slice(1, -2),
-      type: "tagText",
-      index,
-    });
-    return `@=${index++}=#`;
-  });
+  const reg2 = />([\u4E00-\u9FA5a-zA-Z0-9(),.!?_（），。：！？‘“ -]+)<\//g;
+  temp.match(reg2)?.forEach((e) => pushAndReplace(e, [1, -2], "tagText"));
 
-  // "xxx" || 'xxx' objText
-  const reg2 =
-    /(['"])([a-zA-Z0-9,.!?()"'，。！？（）"' ]*[\u4e00-\u9fa5]+[a-zA-Z0-9,.!?()"'，。！？（）"' ]*)\1/g;
-  temp = temp.replace(reg2, (str) => {
-    chineseArr.push({
-      text: str.slice(1, -1),
-      type: "objText",
-      index,
-    });
-    return `@=${index++}=#`;
-  });
+  // "xxx" || 'xxx' objText n
+  const reg3 = /(['"])([\u4E00-\u9FA5a-zA-Z0-9(),.!?_（），。：！？‘“ -]+)\1/g;
+  temp.match(reg3)?.forEach((e) => pushAndReplace(e, [1, -1], "objText"));
+
+  // 至少有一个中文 不能有="存在 不能为空
+  function pushAndReplace(text: string, sub: number[], type: string) {
+    const subStr = text.slice(sub[0], sub[1]);
+
+    const hasCn = /[\u4E00-\u9FA5\uF900-\uFA2D]{1,}/.test(subStr);
+    const miniUnit = true;
+    // const miniUnit = subStr.indexOf('="') == -1;
+
+    if (hasCn && miniUnit) {
+      chineseArr.push({
+        text: subStr,
+        type,
+        index,
+      });
+      temp = temp.replace(text, `@=${index++}=#`);
+    } else {
+      console.log(
+        "🚀 ~ file: find-chinese.ts ~ line 199 ~ pushAndReplace ~ text",
+        text
+      );
+    }
+  }
 
   return chineseArr;
+}
+
+// 替换插槽
+function replaceSlotFun(index: number, key: string, type: string) {
+  let slot = `@=${index}=#`;
+  switch (type) {
+    case "propsText":
+      temp = temp.replace(slot, `={intl.formatMessage({ id: '${key}' })}`);
+      break;
+    case "objText":
+      temp = temp.replace(slot, `intl.formatMessage({ id: '${key}' })`);
+      break;
+    case "tagText":
+      temp = temp.replace(slot, `>{intl.formatMessage({ id: '${key}' })}</`);
+      break;
+  }
 }
 
 // 翻译 传入中文字符串 用\n分割  返回翻译好的数组
@@ -307,22 +320,6 @@ function newKeyFun(chi: string, en: string): string {
     key = key.slice(0, -1);
   }
   return key;
-}
-
-// 替换插槽
-function replaceSlotFun(index: number, key: string, type: string) {
-  let slot = `@=${index}=#`;
-  switch (type) {
-    case "propsText":
-      temp = temp.replace(slot, `={intl.formatMessage({ id: '${key}' })}`);
-      break;
-    case "objText":
-      temp = temp.replace(slot, `intl.formatMessage({ id: '${key}' })`);
-      break;
-    case "tagText":
-      temp = temp.replace(slot, `>{intl.formatMessage({ id: '${key}' })}</`);
-      break;
-  }
 }
 
 // 根据英文的json文件 生成其他语言的文件
