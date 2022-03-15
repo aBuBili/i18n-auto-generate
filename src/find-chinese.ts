@@ -86,9 +86,9 @@ async function replaceChinese(): Promise<void> {
     const { curPageChineseArr, transArr } = await dealPageFun(e);
 
     for (let { text, type, index } of curPageChineseArr) {
-      let key = newKeyFun(text, transArr[index]);
+      let key = newKeyFun(text, transArr[index]); //key
       cnObj[key] = text;
-      enObj[key] = key;
+      enObj[key] = transArr[index];
       replaceSlotFun(index, key, type);
     }
     writeFileFun(e, temp);

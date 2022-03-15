@@ -577,21 +577,7 @@ const TaskDataSync = ({ onTaskTypeChange }: TaskDataSyncProps) => {
             >
               <Input size="full" placeholder="请输入TDW参数，以分号分隔" />
             </FieldInput>
-            <FieldInput
-              required
-              className={`taskFormItem100`}
-              style={{ width: "96.6%", marginLeft: "-9px" }}
-              label={"临时存储中间结果HDFS环境"}
-              name="is_distinct"
-              format={(v) => v?.toString()}
-            >
-              <Input
-                required
-                style={{ marginLeft: "19px" }}
-                size="full"
-                placeholder="请输入临时存储中间结果HDFS环境"
-              />
-            </FieldInput>
+     
             <Form.Item style={{ marginLeft: "-15px" }}>
               <Bubble trigger="click" content={"Script_Param_Tips"}>
                 <Icon type={"help"} />
